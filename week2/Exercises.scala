@@ -178,7 +178,7 @@ object List {
     flatMap(l)(x => {
       if(p(x)) List(x)
       else Nil
-      })
+    })
 
   def filter1Test(): Unit = {
     val l = List(1,2,3,4,5,6,7)
