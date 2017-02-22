@@ -120,7 +120,7 @@ object List {
   // Exercise 9
 
   def sumL(ns: List[Int]) =
-    foldLeft(ns, 0)((x,y) => x + y)
+    foldLeft(ns, 0)(_ + _)
 
   def productL(ns: List[Double]) =
     foldLeft(ns, 1.0)(_ * _)
