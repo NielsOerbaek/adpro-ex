@@ -95,7 +95,7 @@ object List {
 
   def dropWhileAlt[A](xs: List[A], f: A => Boolean): List[A] = xs match {
     case Nil => Nil
-    case Cons(h,t) if f(h) => dropWhile(t, f)
+    case Cons(h,t) if f(h) => dropWhileAlt(t, f)
     case _ => xs
   }
 
@@ -241,37 +241,14 @@ object List {
     }
     (sup,sub) match {
       case (_, Nil) => true
-      case (Cons(_,supt), _) => hasSubsequenceAtHead(sup, sub) || hasSubsequence(supt, sub)
+      case (Cons(_,supt), _) => hasSubsequenceAtHead(sup, sub) || hasSubsequence2(supt, sub)
       case _ => false
-    }
-  }
-  
-  def hasSubsequenceAlt[A] (sup: List[A], sub: List[A]) : Boolean = {
-    def checkSeq(a: List[A], b: List[A]): Boolean = 
-      foldLeft(zipWith[A,A,Boolean]((l,r) => l == r)(a,b),true)((acc, x) => acc && x)
-    sup match {
-      case x if checkSeq(x, sub) => true
-      case Cons(h,t) => hasSubsequence(t,sub)
-      case Nil => false 
     }
   }
 
   // Exercise 19
 
   def pascal (n :Int) : List[Int] = {
-    @annotation.tailrec
-    def go(thisList: List[Int], lastList: List[Int], nLeft: Int): List[Int] = 
-      lastList match {
-        case Cons(a, Cons(b, c)) => go(Cons((a+b),thisList), Cons(b,c), nLeft)
-        case Cons(a, b) if nLeft == 0 => Cons(a, thisList)
-        case Cons(a, b) => go(List(1), Cons(a,thisList), nLeft-1)
-        case Nil if nLeft == 0 => thisList
-        case Nil => go(List(1), thisList, nLeft-1)
-      }
-    go(List[Int](),List[Int](),n)
-  }
-
-  def pascal2 (n :Int) : List[Int] = {
     def go(thisList: List[Int], lastList: List[Int], nLeft: Int): List[Int] = 
       lastList match {
         case Cons(a, Cons(b, c))      => go(Cons((a+b),thisList), Cons(b,c), nLeft)
