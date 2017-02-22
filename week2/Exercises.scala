@@ -222,6 +222,19 @@ object List {
     }
   }
 
+  def hasSubsequence2[A] (sup: List[A], sub: List[A]): Boolean = {
+    def hasSubsequenceAtHead[A] (sup: List[A], sub: List[A]): Boolean = (sup,sub) match {
+      case (_, Nil) => true
+      case (Cons(suph,supt), Cons(subh,subt)) if suph == subh => hasSubsequenceAtHead(supt, subt)
+      case _ => false
+    }
+    (sup,sub) match {
+      case (_, Nil) => true
+      case (Cons(_,supt), _) => hasSubsequenceAtHead(sup, sub) || hasSubsequence(supt, sub)
+      case _ => false
+    }
+  }
+
   // Exercise 19
 
   def pascal (n :Int) : List[Int] = {
