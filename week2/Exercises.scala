@@ -2,7 +2,9 @@
 // A. Wąsowski, IT University of Copenhagen
 //
 // AUTHOR1: Niels Ørbæk Christensen, niec@itu.dk
-// AUTHOR2:
+// AUTHOR2: Niels Roesen Abildgaard, nroe@itu.dk
+// AUTHOR3: Maurice Mugisha, maum@itu.dk
+// Group Number: 14
 //
 // Write names and ITU email addresses of both group members that contributed to
 // the solution of the exercise (in alphabetical order by family name).
@@ -68,7 +70,7 @@ object List {
   def drop[A](xs: List[A], n: Int): List[A] = (xs, n) match {
     case (Nil, _) => Nil
     case (ys, 0) => ys
-    case (Cons(h,t),  i) => drop(t, i-1)
+    case (Cons(h,t), i) => drop(t, i-1)
   }
 
   // alternate
@@ -85,9 +87,16 @@ object List {
 
   def dropWhile[A](xs: List[A], f: A => Boolean): List[A] = xs match {
     case Nil => Nil
-    case Cons(h,t) => {
+    case Cons(h,t) if f(h) =>
       if(f(h)) dropWhile(t, f)
-      else Cons(h,t)
+      else xs
+    }
+  }
+
+  def dropWhileAlt[A](xs: List[A], f: A => Boolean): List[A] = xs match {
+    case Nil => Nil
+    case Cons(h,t) if f(h) => dropWhile(t, f)
+    case _ => xs
     }
   }
 
