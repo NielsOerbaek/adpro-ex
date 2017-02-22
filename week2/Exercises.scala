@@ -106,8 +106,8 @@ object List {
     case Cons (x,xs) => f (x, foldRight (xs,z) (f))
   }
 
-  def length[A](as: List[A]): Int =
-    foldRight(as, 0)((x,y) => y + 1)
+  def length[A](xs: List[A]): Int =
+    foldRight(xs, 0)((x,acc) => acc + 1)
 
   // Exercise 8
 
