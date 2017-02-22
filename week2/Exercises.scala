@@ -253,6 +253,18 @@ object List {
     else go(List(1),List[Int](),n-1)
   }
 
+  def pascal2 (n :Int) : List[Int] = {
+    def go(thisList: List[Int], lastList: List[Int], nLeft: Int): List[Int] = 
+      lastList match {
+        case Cons(a, Cons(b, c))      => go(Cons((a+b),thisList), Cons(b,c), nLeft)
+        case Cons(a, b) if nLeft == 0 => Cons(a, thisList)
+        case Cons(a,b)                => go(List(1), Cons(a,thisList), nLeft-1)
+        case _ if nLeft == 0          => thisList
+        case _                        => go(List(1), thisList, nLeft-1) 
+      }
+    go(Nil,Nil,n)
+  }
+
   // a test: pascal (4) = Cons(1,Cons(3,Cons(3,Cons(1,Nil))))
 
 }
