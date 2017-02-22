@@ -68,16 +68,23 @@ object List {
   def drop[A](xs: List[A], n: Int): List[A] = (xs, n) match {
     case (Nil, _) => Nil
     case (ys, 0) => ys
-    case (Cons(h,t),  i) => drop(t, i-1)
+    case (Cons(h,t), i) => drop(t, i-1)
   }
 
   // Exercise 5
 
   def dropWhile[A](xs: List[A], f: A => Boolean): List[A] = xs match {
     case Nil => Nil
-    case Cons(h,t) => {
+    case Cons(h,t) if f(h) =>
       if(f(h)) dropWhile(t, f)
-      else Cons(h,t)
+      else xs
+    }
+  }
+
+  def dropWhileAlt[A](xs: List[A], f: A => Boolean): List[A] = xs match {
+    case Nil => Nil
+    case Cons(h,t) if f(h) => dropWhile(t, f)
+    case _ => xs
     }
   }
 
