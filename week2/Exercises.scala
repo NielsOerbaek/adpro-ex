@@ -73,6 +73,16 @@ object List {
     case (Cons(h,t), i) => drop(t, i-1)
   }
 
+  // alternate
+
+  def dropAlt[A](xs: List[A], n: Int): List[A] = {
+    if(n == 0) xs
+    xs match {
+      case Nil => Nil
+      case Cons(h, t) => drop(t, n - 1)
+    }
+  }
+
   // Exercise 5
 
   def dropWhile[A](xs: List[A], f: A => Boolean): List[A] = xs match {
@@ -107,8 +117,8 @@ object List {
     case Cons (x,xs) => f (x, foldRight (xs,z) (f))
   }
 
-  def length[A](as: List[A]): Int =
-    foldRight(as, 0)((a,acc) => acc + 1)
+  def length[A](xs: List[A]): Int =
+    foldRight(xs, 0)((x,acc) => acc + 1)
 
   // Exercise 8
 
@@ -179,7 +189,7 @@ object List {
     flatMap(l)(x => {
       if(p(x)) List(x)
       else Nil
-      })
+    })
 
   def filter1Test(): Unit = {
     val l = List(1,2,3,4,5,6,7)
@@ -223,6 +233,19 @@ object List {
     }
   }
 
+  def hasSubsequence2[A] (sup: List[A], sub: List[A]): Boolean = {
+    def hasSubsequenceAtHead[A] (sup: List[A], sub: List[A]): Boolean = (sup,sub) match {
+      case (_, Nil) => true
+      case (Cons(suph,supt), Cons(subh,subt)) if suph == subh => hasSubsequenceAtHead(supt, subt)
+      case _ => false
+    }
+    (sup,sub) match {
+      case (_, Nil) => true
+      case (Cons(_,supt), _) => hasSubsequenceAtHead(sup, sub) || hasSubsequence(supt, sub)
+      case _ => false
+    }
+  }
+  
   def hasSubsequenceAlt[A] (sup: List[A], sub: List[A]) : Boolean = {
     def checkSeq(a: List[A], b: List[A]): Boolean = 
       foldLeft(zipWith[A,A,Boolean]((l,r) => l == r)(a,b),true)((acc, x) => acc && x)
@@ -246,6 +269,18 @@ object List {
         case Nil => go(List(1), thisList, nLeft-1)
       }
     go(List[Int](),List[Int](),n)
+  }
+
+  def pascal2 (n :Int) : List[Int] = {
+    def go(thisList: List[Int], lastList: List[Int], nLeft: Int): List[Int] = 
+      lastList match {
+        case Cons(a, Cons(b, c))      => go(Cons((a+b),thisList), Cons(b,c), nLeft)
+        case Cons(a, b) if nLeft == 0 => Cons(a, thisList)
+        case Cons(a,b)                => go(List(1), Cons(a,thisList), nLeft-1)
+        case _ if nLeft == 0          => thisList
+        case _                        => go(List(1), thisList, nLeft-1) 
+      }
+    go(Nil,Nil,n)
   }
 
   // a test: pascal (4) = Cons(1,Cons(3,Cons(3,Cons(1,Nil))))
