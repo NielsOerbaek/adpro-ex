@@ -71,6 +71,16 @@ object List {
     case (Cons(h,t),  i) => drop(t, i-1)
   }
 
+  // alternate
+
+  def dropAlt[A](xs: List[A], n: Int): List[A] = {
+    if(n == 0) xs
+    xs match {
+      case Nil => Nil
+      case Cons(h, t) => drop(t, n - 1)
+    }
+  }
+
   // Exercise 5
 
   def dropWhile[A](xs: List[A], f: A => Boolean): List[A] = xs match {
