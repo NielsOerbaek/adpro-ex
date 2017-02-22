@@ -87,7 +87,7 @@ object List {
 
   def dropWhile[A](xs: List[A], f: A => Boolean): List[A] = xs match {
     case Nil => Nil
-    case Cons(h,t) if f(h) =>
+    case Cons(h,t) => {
       if(f(h)) dropWhile(t, f)
       else xs
     }
@@ -97,7 +97,6 @@ object List {
     case Nil => Nil
     case Cons(h,t) if f(h) => dropWhile(t, f)
     case _ => xs
-    }
   }
 
   // Exercise 6
@@ -107,6 +106,9 @@ object List {
     case Cons(h, Nil) => Nil
     case Cons(h,t) => Cons(h, init(t))
   }
+
+  // This runs in linear and space as it creates a new list 
+  // of asymptotically same size
 
   // Exercise 7
 
@@ -170,7 +172,7 @@ object List {
 
   def filterTest(): Unit = {
     val l = List(1,2,3,4,5,6,7)
-    println(filter(l)(x => (x%2) == 0))
+    println(filter(l)( x => (x % 2) == 0))
   }
   
   // Exercise 14
@@ -243,23 +245,30 @@ object List {
       case _ => false
     }
   }
+  
+  def hasSubsequenceAlt[A] (sup: List[A], sub: List[A]) : Boolean = {
+    def checkSeq(a: List[A], b: List[A]): Boolean = 
+      foldLeft(zipWith[A,A,Boolean]((l,r) => l == r)(a,b),true)((acc, x) => acc && x)
+    sup match {
+      case x if checkSeq(x, sub) => true
+      case Cons(h,t) => hasSubsequence(t,sub)
+      case Nil => false 
+    }
+  }
 
   // Exercise 19
 
   def pascal (n :Int) : List[Int] = {
+    @annotation.tailrec
     def go(thisList: List[Int], lastList: List[Int], nLeft: Int): List[Int] = 
-      (thisList, lastList, nLeft) match {
-        case (x, Cons(a, Cons(b, c)), _) => 
-          go(Cons((a+b),x), Cons(b,c), nLeft)
-        case (x, Cons(a, b), 0) => Cons(a, thisList)
-        case (x, Cons(a,b), _) => 
-          go(List(1), Cons(a,x), nLeft-1)
-        case(x, Nil, 0) => x
-        case (x, Nil, n) => 
-          go(List(1), x, n-1) 
+      lastList match {
+        case Cons(a, Cons(b, c)) => go(Cons((a+b),thisList), Cons(b,c), nLeft)
+        case Cons(a, b) if nLeft == 0 => Cons(a, thisList)
+        case Cons(a, b) => go(List(1), Cons(a,thisList), nLeft-1)
+        case Nil if nLeft == 0 => thisList
+        case Nil => go(List(1), thisList, nLeft-1)
       }
-    if(n==0) Nil
-    else go(List(1),List[Int](),n-1)
+    go(List[Int](),List[Int](),n)
   }
 
   def pascal2 (n :Int) : List[Int] = {
