@@ -168,7 +168,8 @@ object ExercisesOption {
   def sequence[A] (aos: List[Option[A]]) : Option[List[A]] = 
     aos.foldRight()
 
-  // Exercise 10 (4.5)
+  def sequence2[A] (aos: List[Option[A]]) : Option[List[A]] =
+    aos.foldRight (Some(List()): Option[List[A]]) ((ao, acco) => acco.flatMap(acc => ao.map(_::acc)))
 
   // Exercise 10 (4.5)
 
@@ -231,10 +232,10 @@ object Tests extends App {
   assert (ExercisesOption.map2 (None: Option[Int],None) (_ + _) == None)
 
   // Exercise 9
-  // assert (ExercisesOption.sequence (List(Some(1), Some(2), Some(42))) == Some(List(1,2,42)))
-  // assert (ExercisesOption.sequence (List(None,    Some(2), Some(42))) == None)
-  // assert (ExercisesOption.sequence (List(Some(1), None,    Some(42))) == None)
-  // assert (ExercisesOption.sequence (List(Some(1), Some(2), None    )) == None)
+  assert (ExercisesOption.sequence (List(Some(1), Some(2), Some(42))) == Some(List(1,2,42)))
+  assert (ExercisesOption.sequence (List(None,    Some(2), Some(42))) == None)
+  assert (ExercisesOption.sequence (List(Some(1), None,    Some(42))) == None)
+  assert (ExercisesOption.sequence (List(Some(1), Some(2), None    )) == None)
 
   // Exercise 10
   def f (n: Int) :Option[Int] = if (n%2 == 0) Some(n) else None
