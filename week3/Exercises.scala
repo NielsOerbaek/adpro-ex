@@ -73,7 +73,7 @@ object Tree {
 
   def maximum (t: Tree[Int]) : Int = t match {
     case Leaf(x) => x
-    case Branch(a,b) => maximum(a) max maximum(b) 
+    case Branch(a,b) => maximum(a) max maximum(b)
   }
 
   // Exercise 4 (3.28)
@@ -125,11 +125,11 @@ sealed trait Option[+A] {
   def orElse[B >: A] (ob : => Option[B]) : Option[B] = 
     this map (Some(_)) getOrElse ob
 
+
   def filter (f: A => Boolean) : Option[A] = 
     flatMap((a) => if(f(a)) Some(a) else None)
 
 }
-
 case class Some[+A] (get: A) extends Option[A]
 case object None extends Option[Nothing]
 
@@ -143,14 +143,18 @@ object ExercisesOption {
 
   // Exercise 7 (4.2)
 
+  // The else in get or else will not be reached since we know that the list
+  // is not empty.
   def variance (xs: Seq[Double]) : Option[Double] = {
     if(xs.isEmpty) None
     else mean(xs.map((x: Double) => math.pow(x - mean(xs).getOrElse(0.0) , 2))) 
   }
 
-  // - Solution from book:
-  //def variance(xs: Seq[Double]): Option[Double] = 
-  //  mean(xs) flatMap (m => mean(xs.map(x => math.pow(x - m, 2))))
+  def varianceForComp (xs: Seq[Double]) : Option[Double] = 
+    for {
+      m <- mean(xs)
+      v <- mean(xs.map((x) => math.pow(x - m,2)))
+    } yield (v)
 
   // Exercise 8 (4.3)
 
@@ -166,12 +170,12 @@ object ExercisesOption {
   // Exercise 9 (4.4)
 
   def sequence[A] (aos: List[Option[A]]) : Option[List[A]] = 
-    aos.foldRight()
+    aos.foldRight (Some(List()): Option[List[A]]) ((ao,acc) => ao flatMap ((a) => acc map (a::_)))
 
   // Exercise 10 (4.5)
 
-  // def traverse[A,B] (as: List[A]) (f :A => Option[B]) :Option[List[B]] =
-
+  def traverse[A,B] (as: List[A]) (f :A => Option[B]) :Option[List[B]] =
+    as.foldRight (Some(List()): Option[List[B]]) ((a, acco) => acco flatMap (acc => f(a) map (_::acc)))
 }
 
 
@@ -229,14 +233,14 @@ object Tests extends App {
   assert (ExercisesOption.map2 (None: Option[Int],None) (_ + _) == None)
 
   // Exercise 9
-  // assert (ExercisesOption.sequence (List(Some(1), Some(2), Some(42))) == Some(List(1,2,42)))
-  // assert (ExercisesOption.sequence (List(None,    Some(2), Some(42))) == None)
-  // assert (ExercisesOption.sequence (List(Some(1), None,    Some(42))) == None)
-  // assert (ExercisesOption.sequence (List(Some(1), Some(2), None    )) == None)
+  assert (ExercisesOption.sequence (List(Some(1), Some(2), Some(42))) == Some(List(1,2,42)))
+  assert (ExercisesOption.sequence (List(None,    Some(2), Some(42))) == None)
+  assert (ExercisesOption.sequence (List(Some(1), None,    Some(42))) == None)
+  assert (ExercisesOption.sequence (List(Some(1), Some(2), None    )) == None)
 
   // Exercise 10
-  // def f (n: Int) :Option[Int] = if (n%2 == 0) Some(n) else None
-  // assert (ExercisesOption.traverse (List(1,2,42)) (Some(_)) == Some(List(1,2,42)))
-  // assert (ExercisesOption.traverse (List(1,2,42)) (f) == None)
+  def f (n: Int) :Option[Int] = if (n%2 == 0) Some(n) else None
+  assert (ExercisesOption.traverse (List(1,2,42)) (Some(_)) == Some(List(1,2,42)))
+  assert (ExercisesOption.traverse (List(1,2,42)) (f) == None)
 
 }
