@@ -172,10 +172,14 @@ object ExercisesOption {
   def sequence[A] (aos: List[Option[A]]) : Option[List[A]] = 
     aos.foldRight (Some(List()): Option[List[A]]) ((ao,acc) => ao flatMap ((a) => acc map (a::_)))
 
+  def sequence2[A] (aos: List[Option[A]]) : Option[List[A]] =
+    aos.foldRight (Some(List()): Option[List[A]]) ((ao, acco) => acco.flatMap(acc => ao.map(_::acc)))
+
   // Exercise 10 (4.5)
 
   def traverse[A,B] (as: List[A]) (f :A => Option[B]) :Option[List[B]] =
     as.foldRight (Some(List()): Option[List[B]]) ((a, acco) => acco flatMap (acc => f(a) map (_::acc)))
+
 }
 
 
