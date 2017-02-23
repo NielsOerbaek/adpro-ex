@@ -170,8 +170,10 @@ object ExercisesOption {
 
   // Exercise 10 (4.5)
 
-  // def traverse[A,B] (as: List[A]) (f :A => Option[B]) :Option[List[B]] =
+  // Exercise 10 (4.5)
 
+  def traverse[A,B] (as: List[A]) (f :A => Option[B]) :Option[List[B]] =
+    as.foldRight (Some(List()): Option[List[B]]) ((a, acco) => acco.flatMap(acc => f(a).map(_::acc)))
 }
 
 
@@ -235,8 +237,8 @@ object Tests extends App {
   // assert (ExercisesOption.sequence (List(Some(1), Some(2), None    )) == None)
 
   // Exercise 10
-  // def f (n: Int) :Option[Int] = if (n%2 == 0) Some(n) else None
-  // assert (ExercisesOption.traverse (List(1,2,42)) (Some(_)) == Some(List(1,2,42)))
-  // assert (ExercisesOption.traverse (List(1,2,42)) (f) == None)
+  def f (n: Int) :Option[Int] = if (n%2 == 0) Some(n) else None
+  assert (ExercisesOption.traverse (List(1,2,42)) (Some(_)) == Some(List(1,2,42)))
+  assert (ExercisesOption.traverse (List(1,2,42)) (f) == None)
 
 }
