@@ -60,7 +60,13 @@ sealed trait Stream[+A] {
       case Empty => Empty
       case Cons(h,t) => cons(h(), t().take(n-1))
     }
-  } 
+  }
+
+  def takeAlt(n: Int): Stream[A] = this match {
+    case Cons(h,t) if (n>0) => cons(h(), t().takeAlt(n-1))
+    case _ => Empty
+  }
+
 
   def drop(n: Int): Stream[A] = {
     if (n == 0) this
@@ -68,6 +74,12 @@ sealed trait Stream[+A] {
       case Empty => Empty
       case Cons(h,t) => t().drop(n-1)
     }
+  }
+
+  def dropAlt(n: Int):Stream[A] = this match {
+    case _ if (n==0) => this
+    case Cons(h,t) => t().dropAlt(n-1)
+    case Empty => Empty
   }
 
   //exercise 4
@@ -98,9 +110,8 @@ sealed trait Stream[+A] {
   def append[B >: A](that: => Stream[B]) = 
     this.foldRight[Stream[B]] (that) ((a, acc) => cons(a,acc))
 
-  //This is eager and i cannot figure out how to avoid it.
   def flatMap[B](f: A => Stream[B]) = 
-    this.foldRight[Stream[B]] (Empty) ((a,acc) => f(a) append acc)
+    this.foldRight[Stream[B]] (Empty) (f(_) append _)
 
   //exercise 13
   def map1[B](f: A => B): Stream[B] = 
@@ -108,7 +119,7 @@ sealed trait Stream[+A] {
 
   //Can we do this with out the if-statement?
   def take1(n: Int): Stream[A] = 
-    unfold[A, (Stream[A], Int)] ((this,n)) (state => 
+    unfold ((this,n)) (state => 
         if(state._2 > 0) 
           state._1.headOption.map(h=>(h, (state._1.tail, state._2-1))) 
         else None
@@ -116,7 +127,7 @@ sealed trait Stream[+A] {
 
   def takeWhile1(p: A => Boolean): Stream[A] = 
     unfold (this) (state => 
-      state.headOption.filter(p(_)).map(h => (h, state.tail)))
+      state.headOption.filter(p).map(h => (h, state.tail)))
 
   def zipWith[B,C] (f: (=> A, => B) => C) (that: Stream[B]) : Stream[C] =
     unfold ((this, that)) (state =>
@@ -159,6 +170,7 @@ object Stream {
     // Note 2: pattern matching with :: does not seem to work with Seq, so we
     //         use a generic function API of Seq
 
+  //exercise 1
   def to(n: Int): Stream[Int] = {
     def go(i: Int): Stream[Int] = {
       if(i == n) empty
@@ -173,22 +185,20 @@ object Stream {
 
   //exercise 10
   def fibs() : Stream[Int] = {
-    def go(n1: Int, n2: Int): Stream[Int] = {
-      cons(n2, go(n2, n1+n2))
-    }
+    def go(n1: Int, n2: Int): Stream[Int] = cons(n2, go(n2, n1+n2))
     cons(0, go(0,1))
   }
 
   //exercise 11
   def unfold[A,S] (state: S) (f: S => Option[(A,S)]) : Stream[A] =
-    f(state).map[Stream[A]] (x => cons(x._1, unfold(x._2)(f))).getOrElse(Empty)
+    f(state).map (x => cons(x._1, unfold(x._2)(f))).getOrElse(Empty)
 
   //exercise 12
   def from1(n: Int): Stream[Int] = 
     unfold (n) (x => Some((x,x+1)))
 
   def fibs1(): Stream[Int] =
-    unfold ((0,1)) (x => Some((x._1, (x._2,(x._1+x._2)))))
+    unfold (0,1) (x => Some(x._1, (x._2, x._1+x._2)))
 
 }
 
