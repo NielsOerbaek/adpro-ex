@@ -59,6 +59,7 @@ sealed trait Stream[+A] {
     case _ => Empty
   } 
 
+
   def drop(n: Int): Stream[A] = this match {
     case Cons(h,t) if n > 0 => t().drop(n-1)
     case Empty => Empty
@@ -94,7 +95,7 @@ sealed trait Stream[+A] {
     this.foldRight[Stream[B]] (that) ((a, acc) => cons(a,acc))
 
   def flatMap[B](f: A => Stream[B]) = 
-    this.foldRight[Stream[B]] (Empty) ((a,acc) => f(a) append acc)
+    this.foldRight[Stream[B]] (Empty) (f(_) append _)
 
   //exercise 9
   def find (p :A => Boolean) :Option[A] = this.filter (p).headOption
@@ -108,8 +109,8 @@ sealed trait Stream[+A] {
     unfold (this) (xs => xs.headOption.map(h => (f(h), xs.tail)))
 
   //Can we do this with out the if-statement?
-  def take1(n: Int): Stream[A] = 
-    unfold[A, (Stream[A], Int)] (this,n) (state => 
+  def take1(n: Int): Stream[A] =
+    unfold ((this,n)) (state => 
         if(state._2 > 0) 
           state._1.headOption.map(h => (h, (state._1.tail, state._2 - 1))) 
         else None
@@ -151,6 +152,7 @@ object Stream {
     // Note 2: pattern matching with :: does not seem to work with Seq, so we
     //         use a generic function API of Seq
 
+  //exercise 1
   def to(n: Int): Stream[Int] = {
     def go(i: Int): Stream[Int] = {
       if(i == n) empty
@@ -165,15 +167,13 @@ object Stream {
 
   //exercise 10
   def fibs() : Stream[Int] = {
-    def go(n1: Int, n2: Int): Stream[Int] = {
-      cons(n2, go(n2, n1+n2))
-    }
+    def go(n1: Int, n2: Int): Stream[Int] = cons(n2, go(n2, n1+n2))
     cons(0, go(0,1))
   }
 
   //exercise 11
   def unfold[A,S] (state: S) (f: S => Option[(A,S)]) : Stream[A] =
-    f(state).map( x => cons(x._1, unfold (x._2) (f)) ).getOrElse(Empty)
+    f(state).map (x => cons(x._1, unfold(x._2)(f))).getOrElse(Empty)
 
   //exercise 12
   def from1(n: Int): Stream[Int] = 
