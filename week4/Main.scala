@@ -35,11 +35,18 @@ val n1t = naturals.take(1000000000).drop(41).take(10).toList
 
 val n2t = naturals.takeWhile(_<1000000000).drop(100).take(50).toList
 
+val n2tneg = naturals.takeWhile(_<10).toList
+
 assert(!naturals.forAll(_ < 0))
 
 assert(!naturals.forAll(_ < 10))
 
 val n3t = naturals.takeWhile2(_<1000000000).drop(100).take(50).toList
+
+val n3tneg = naturals.takeWhile2(_<10).toList
+
+assert(n3t == n2t)
+assert(n3tneg == n2tneg)
 
 assert(l1.headOption2 == None)
 assert(l2.headOption2 == None)

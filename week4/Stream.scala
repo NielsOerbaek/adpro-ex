@@ -59,32 +59,16 @@ sealed trait Stream[+A] {
   }
 
   //exercise 3
-  def take(n: Int): Stream[A] = {
-    if (n == 0) Empty
-    else this match {
-      case Empty => Empty
-      case Cons(h,t) => cons(h(), t().take(n-1))
-    }
-  }
-
-  def takeAlt(n: Int): Stream[A] = this match {
-    case Cons(h,t) if (n>0) => cons(h(), t().takeAlt(n-1))
+  def take(n: Int): Stream[A] = this match {
+    case Cons(h,t) if n > 0 => cons(h(), t().take(n-1))
     case _ => Empty
-  }
+  } 
 
 
-  def drop(n: Int): Stream[A] = {
-    if (n == 0) this
-    else this match {
-      case Empty => Empty
-      case Cons(h,t) => t().drop(n-1)
-    }
-  }
-
-  def dropAlt(n: Int):Stream[A] = this match {
-    case _ if (n==0) => this
-    case Cons(h,t) => t().dropAlt(n-1)
+  def drop(n: Int): Stream[A] = this match {
+    case Cons(h,t) if n > 0 => t().drop(n-1)
     case Empty => Empty
+    case _ => this
   }
 
   //exercise 4
@@ -103,7 +87,7 @@ sealed trait Stream[+A] {
 
   //exercise 7
   def headOption2 (): Option[A] = 
-    this.foldRight[Option[A]](None)((a, acc) => Some(a))
+    this.foldRight[Option[A]] (None) ((a, acc) => Some(a))
 
   //exercise 8
   def map[B](f: A => B): Stream[B] =
@@ -118,40 +102,38 @@ sealed trait Stream[+A] {
   def flatMap[B](f: A => Stream[B]) = 
     this.foldRight[Stream[B]] (Empty) (f(_) append _)
 
+  //exercise 9
+  def find (p :A => Boolean) :Option[A] = this.filter (p).headOption
+
+  //On lists, filter runs through the entire list, because it is eager (strict).
+  //For streams, filter is lazy and so no computation is performed until headOption
+  // is called, and then only the needed values (until first match) computes.
+
   //exercise 13
   def map1[B](f: A => B): Stream[B] = 
-    unfold (this) (state => state.headOption.map(h => (f(h),state.tail)))
+    unfold (this) (xs => xs.headOption.map(h => (f(h), xs.tail)))
 
   //Can we do this with out the if-statement?
-  def take1(n: Int): Stream[A] = 
+  def take1(n: Int): Stream[A] =
     unfold ((this,n)) (state => 
         if(state._2 > 0) 
-          state._1.headOption.map(h=>(h, (state._1.tail, state._2-1))) 
+          state._1.headOption.map(h => (h, (state._1.tail, state._2 - 1))) 
         else None
       )
 
   def takeWhile1(p: A => Boolean): Stream[A] = 
-    unfold (this) (state => 
-      state.headOption.filter(p).map(h => (h, state.tail)))
+    unfold (this) (xs => xs.headOption.filter(p).map(h => (h, xs.tail)))
 
   def zipWith[B,C] (f: (=> A, => B) => C) (that: Stream[B]) : Stream[C] =
-    unfold ((this, that)) (state =>
+    unfold (this, that) (state =>
         for {
           thisH <- state._1.headOption
           thatH <- state._2.headOption
         } yield (f(thisH, thatH), (state._1.tail, state._2.tail))
       )
-
+      
   //The result of the computation in exercise 13 should be a list of 10 x true
-
-
-
-  def find (p :A => Boolean) :Option[A] = this.filter (p).headOption
-
-
 }
-
-
 
 
 case object Empty extends Stream[Nothing]
@@ -181,7 +163,7 @@ object Stream {
       if(i == n) empty
       else cons(i, go(i+1))
     }
-    go(1);  
+    go(1);
   }
 
   def from(n: Int): Stream[Int] = {
@@ -203,7 +185,7 @@ object Stream {
     unfold (n) (x => Some((x,x+1)))
 
   def fibs1(): Stream[Int] =
-    unfold (0,1) (x => Some(x._1, (x._2, x._1+x._2)))
+    unfold (0,1) (x => Some( x._1, (x._2, (x._1 + x._2) ) ) )
 
 }
 
