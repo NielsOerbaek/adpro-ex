@@ -1,6 +1,11 @@
 // Advanced Programming 2015
 // Andrzej Wąsowski, IT University of Copenhagen
 //
+// AUTHOR1: Niels Ørbæk Christensen, niec@itu.dk
+// AUTHOR2: Niels Roesen Abildgaard, nroe@itu.dk
+// AUTHOR3: Maurice Mugisha, maum@itu.dk
+// Group Number: 14
+//
 // A script meant to be loaded into REPL (scala -i Main.scala)
 
 import fpinscala.laziness._
