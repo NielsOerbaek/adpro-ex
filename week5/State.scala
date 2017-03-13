@@ -25,8 +25,8 @@ object RNG {
   // Exercise 2 (CB 6.2)
 
   def double(rng: RNG): (Double, RNG) = { 
-    val (randomInt, newRNG) = rng.nextInt
-    val randomDouble = randomInt.toDouble/(Int.MaxValue+1).toDouble
+    val (randomInt, newRNG) = nonNegativeInt(rng)
+    val randomDouble = randomInt.toDouble/((Int.MaxValue).toDouble + 1.0)
     (randomDouble, newRNG)
   }
 
@@ -51,8 +51,8 @@ object RNG {
     ((randomDouble1,randomDouble2,randomDouble3), newRNG3)
   }
 
-  // def boolean(rng: RNG): (Boolean, RNG) =
-  //  rng.nextInt match { case (i,rng2) => (i%2==0,rng2) }
+  def boolean(rng: RNG): (Boolean, RNG) =
+    rng.nextInt match { case (i,rng2) => (i%2==0,rng2) }
 
   // Exercise 4 (CB 6.4)
 
@@ -83,35 +83,55 @@ object RNG {
       (f(a), rng2)
     }
 
-  // def nonNegativeEven: Rand[Int] = map(nonNegativeInt)(i => i - i % 2)
+  def nonNegativeEven: Rand[Int] = map(nonNegativeInt)(i => i - i % 2)
 
   // Exercise 5 (CB 6.5)
   val _double: Rand[Double] = map(int)(i => i.toDouble/(Int.MaxValue+1).toDouble)
 
   // Exercise 6 (CB 6.6)
 
-  // def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    rng => {
+      val (a, rng2) = ra(rng)
+      val (b, rng3) = rb(rng2)
+      (f(a,b), rng3)
+    }
 
   // this is given in the book
 
-  // def both[A,B](ra: Rand[A], rb: Rand[B]): Rand[(A,B)] =
-  //  map2(ra, rb)((_, _))
+  def both[A,B](ra: Rand[A], rb: Rand[B]): Rand[(A,B)] =
+    map2(ra, rb)((_, _))
 
-  // val randIntDouble: Rand[(Int, Double)] = both(int, double)
+  val randIntDouble: Rand[(Int, Double)] = both(int, double)
 
-  // val randDoubleInt: Rand[(Double, Int)] = both(double, int)
+  val randDoubleInt: Rand[(Double, Int)] = both(double, int)
 
   // Exercise 7 (6.7)
 
-  // def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
+    rng => {
+      fs.foldLeft[(List[A], RNG)] (Nil, rng) ((acc, f) => {
+        val (as, accRNG) = acc
+        val (a, newRNG) = f(accRNG)
+        (a::as, newRNG)
+      })
+    }
 
-  // def _ints(count: Int): Rand[List[Int]] = ...
+
+  def _ints(count: Int): Rand[List[Int]] = 
+    sequence(List.fill(count)(int))
 
   // Exercise 8 (6.8)
 
-  // def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ...
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = 
+    rng => {
+      val (a, rng2) = f(rng)
+      val (b, rng3) = g(a)(rng2)
+      (b,rng3)
+    }
 
-  // def nonNegativeLessThan(n: Int): Rand[Int] = { ...
+  def nonNegativeLessThan(n: Int): Rand[Int] = 
+    flatMap (double) (d => rng => ((d * n).toInt ,rng))
 
 }
 
@@ -121,11 +141,25 @@ case class State[S, +A](run: S => (A, S)) {
 
   // Exercise 9 (6.10)
 
-  // def map[B](f: A => B): State[S, B] = ...
+  def map[B](f: A => B): State[S, B] = 
+    State( s => {
+      val (a, state2) = run(s)
+      (f(a), state2)
+    })
 
-  // def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] = ...
+  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] = 
+    State( s => {
+        val (a, state2) = run(s)
+        val (b, state3) = sb.run(state2)
+        (f(a,b), state3)
+      })
 
-  // def flatMap[B](f: A => State[S, B]): State[S, B] = State(s => { ...
+  def flatMap[B](f: A => State[S, B]): State[S, B] = 
+    State(s => {
+        val (a, state2) = run(s)
+        val (b, state3) = f(a).run(state2)
+        (b, state3)
+      })
 
 }
 
@@ -137,8 +171,15 @@ object State {
 
   // Exercise 9 (6.10) continued
 
-  // def sequence[S,A](sas: List[State[S, A]]): State[S, List[A]] = ...
-  //
+  def sequence[S,A](sas: List[State[S, A]]): State[S, List[A]] = 
+    State(s => {
+      sas.foldLeft[(List[A],S)] (Nil, s) ((acc, sa) => {
+        val (as, accState) = acc
+        val (a, newState) = sa.run(accState)
+        (a::as, newState)
+        })
+      })
+  
   // This is given in the book:
 
   // def modify[S](f: S => S): State[S, Unit] = for {
@@ -155,12 +196,15 @@ object State {
 
   // Exercise 10
 
-  // def state2stream[S,A] (s :State[S,A]) (seed :S) :Stream[A] = ...
+  def state2stream[S,A] (s :State[S,A]) (seed :S) :Stream[A] = {
+    val (a, newState) = s.run(seed)
+    Stream.cons(a, state2stream(s)(newState))
+  }
 
   // Exercise 11
 
-  // val random_integers = ...
-
+  val random_integers = state2stream(random_int)(RNG.Simple(42)).take(10).toList
+  
 }
 
 
