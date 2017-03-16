@@ -65,7 +65,6 @@ object RNG {
     }
   }
 
-
   // There is something terribly repetitive about passing the RNG along
   // every time. What could we do to eliminate some of this duplication
   // of effort?
@@ -116,7 +115,6 @@ object RNG {
         (a::as, newRNG)
       })
     }
-
 
   def _ints(count: Int): Rand[List[Int]] = 
     sequence(List.fill(count)(int))
