@@ -65,18 +65,34 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
   }
   
   behavior of "take"
+    
+  val nonNegativeInts = for (n <- Gen.choose(0, 10000)) yield n 
 
   it should "should not force any heads nor any tails (04)" in check {
-    Prop.forAll { (n: Int) => { infiniteBombStream.take(n); empty == empty } }
+    Prop.forAll (nonNegativeInts) { (n: Int) => { infiniteBombStream.take(n); empty == empty } }
   } 
-
+  
   it should "not ever force the (n+1)st head ever" in check {
     def nNumbersThenBombs(n: Int): Stream[Int] = {
       if(n == 0) infiniteBombStream.map(x => 1)
       else cons(n, nNumbersThenBombs(n - 1))
     }
-    
-    Prop.forAll { (n: Int) => n < 0 || nNumbersThenBombs(n).take(n).toList.length == n }
+
+    Prop.forAll (nonNegativeInts) { (n: Int) => nNumbersThenBombs(n).take(n).toList.length == n }
   }
 
+ it should "be idempotent my friend (05)" in check {
+    Prop.forAll (nonNegativeInts) { (n: Int) => from(0).take(n).take(n).toList == from(0).take(n).toList }
+  }
+  
+  behavior of "drop"
+
+  it should "be additive my friend (06)" in check {
+    Prop.forAll (nonNegativeInts, nonNegativeInts, genNonEmptyStream[Int]) { (n: Int, m: Int, s: Stream[Int]) => s.drop(n).drop(m).toList == s.drop(n + m).toList }
+  }
+    
+  it should "not force any of the dropped elements heads (07)" in check {
+    Prop.forAll (nonNegativeInts) { (n: Int) => infiniteBombStream.drop(n); true}
+  }
+    
 }
