@@ -75,7 +75,7 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
   } 
 
   
-  it should "not ever force the (n+1)st head ever" in check {
+  it should "not ever force the (n+1)st head ever (05)" in check {
     def nNumbersThenBombs(n: Int): Stream[Int] = {
       if(n == 0) infiniteBombStream.map(x => 1)
       else cons(n, nNumbersThenBombs(n - 1))
@@ -84,21 +84,21 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
     Prop.forAll (nonNegativeInts) { (n: Int) => nNumbersThenBombs(n).take(n).toList.length == n }
   }
 
-  it should "be idempotent my friend (05)" in check {
+  it should "be idempotent my friend (06)" in check {
     Prop.forAll (nonNegativeInts) { (n: Int) => from(0).take(n).take(n).toList == from(0).take(n).toList }
   }
   
   behavior of "drop"
 
-  it should "be additive my friend (06)" in check {
+  it should "be additive my friend (07)" in check {
     Prop.forAll (nonNegativeInts, nonNegativeInts, genNonEmptyStream[Int]) { (n: Int, m: Int, s: Stream[Int]) => s.drop(n).drop(m).toList == s.drop(n + m).toList }
   } 
 
-  it should "not force any of the dropped elements heads (07)" in check {
+  it should "not force any of the dropped elements heads (08)" in check {
     Prop.forAll (nonNegativeInts) { (n: Int) => infiniteBombStream.drop(n); true }
   } 
 
-  it should "not force any dropped element heads, even if we force the tail (08)" in check {
+  it should "not force any dropped element heads, even if we force the tail (09)" in check {
     def nBombsThenNumbers(n: Int): Stream[Int] = {
       if(n == 0) from(0)
       else cons({throw new Bomb; 1}, nBombsThenNumbers(n - 1))
@@ -109,25 +109,25 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
 
   behavior of "map"
 
-  it should "map to the value with the identity function (09)" in check {
+  it should "map to the value with the identity function (10)" in check {
     Prop.forAll { (s: Stream[Int]) => s.map(s => s).toList == s.toList }
   }
     
-  it should "terminate on infinite streams (10)" in {
+  it should "terminate on infinite streams (11)" in {
     Prop.forAll (nonNegativeInts) { (n: Int) => from(0).map(_ + 1).take(n).toList == from(1).take(n).toList}
   }
 
   behavior of "append"
     
-  it should "not force any values in the first stream (11)" in {
+  it should "not force any values in the first stream (12)" in {
      assert({infiniteBombStream append from(0); true})
   }
   
-  it should "not force any values in the last stream (12)" in {
+  it should "not force any values in the last stream (13)" in {
     assert({from(0) append infiniteBombStream; true})
   }
 
-  it should "result in a stream with the parts concatenated (13)" in check {
+  it should "result in a stream with the parts concatenated (14)" in check {
     Prop.forAll (nonNegativeInts, nonNegativeInts) { (n: Int, m: Int) => (from(0).take(n) append from(n).take(m)).toList == from(0).take(n + m).toList }
   }
 
