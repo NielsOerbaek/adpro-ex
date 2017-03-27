@@ -119,8 +119,8 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
 
   behavior of "append"
     
-  it should "not force any values in the first stream (12)" in {
-     assert({infiniteBombStream append from(0); true})
+  it should "only force the very first value in the first stream (12)" in {
+     assert({cons(1, infiniteBombStream) append from(0); true})
   }
   
   it should "not force any values in the last stream (13)" in {
