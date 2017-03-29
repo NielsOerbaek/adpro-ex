@@ -27,8 +27,10 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
 
   import Stream._
 
-  //niels c really wanted to build an infinite unit stream that throws bombs, so here goes:
-  def infiniteBombStream: Stream[Unit] = cons({throw new Bomb}, infiniteBombStream)
+  //niels c really wanted to build an infinite unit stream that throws bombs, 
+  //so here goes:
+  def infiniteBombStream: Stream[Unit] = 
+    cons({throw new Bomb}, infiniteBombStream)
 
   behavior of "headOption"
 
@@ -39,7 +41,8 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
   }
 
   // An example generator of random finite non-empty streams
-  def list2stream[A] (la :List[A]): Stream[A] = la.foldRight (empty[A]) (cons[A](_,_))
+  def list2stream[A] (la :List[A]): Stream[A] = 
+    la.foldRight (empty[A]) (cons[A](_,_))
 
   // In ScalaTest we use the check method to switch to ScalaCheck's internal DSL
   def genNonEmptyStream[A] (implicit arbA :Arbitrary[A]) :Gen[Stream[A]] =
@@ -71,7 +74,9 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
   val nonNegativeInts = for (n <- Gen.choose(0, 10000)) yield n 
 
   it should "should not force any heads nor any tails (04)" in check {
-    Prop.forAll (nonNegativeInts) { (n: Int) => infiniteBombStream.take(n); true }
+    Prop.forAll (nonNegativeInts) {   
+      (n: Int) => infiniteBombStream.take(n); true 
+    }
   } 
 
   
@@ -81,30 +86,41 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
       else cons(n, nNumbersThenBombs(n - 1))
     }
     
-    Prop.forAll (nonNegativeInts) { (n: Int) => nNumbersThenBombs(n).take(n).toList.length == n }
+    Prop.forAll (nonNegativeInts) { 
+      (n: Int) => nNumbersThenBombs(n).take(n).toList.length == n 
+    }
   }
 
   it should "be idempotent my friend (06)" in check {
-    Prop.forAll (nonNegativeInts) { (n: Int) => from(0).take(n).take(n).toList == from(0).take(n).toList }
+    Prop.forAll (nonNegativeInts) { 
+      (n: Int) => from(0).take(n).take(n).toList == from(0).take(n).toList 
+    }
   }
   
   behavior of "drop"
 
   it should "be additive my friend (07)" in check {
-    Prop.forAll (nonNegativeInts, nonNegativeInts, genNonEmptyStream[Int]) { (n: Int, m: Int, s: Stream[Int]) => s.drop(n).drop(m).toList == s.drop(n + m).toList }
+    Prop.forAll (nonNegativeInts, nonNegativeInts, genNonEmptyStream[Int]) { 
+      (n: Int, m: Int, s: Stream[Int]) => 
+        s.drop(n).drop(m).toList == s.drop(n + m).toList 
+      }
   } 
 
   it should "not force any of the dropped elements heads (08)" in check {
-    Prop.forAll (nonNegativeInts) { (n: Int) => infiniteBombStream.drop(n); true }
+    Prop.forAll (nonNegativeInts) { 
+      (n: Int) => infiniteBombStream.drop(n); true 
+    }
   } 
 
-  it should "not force any dropped element heads, even if we force the tail (09)" in check {
+  it should "not force any dropped heads, if we force the tail (09)" in check {
     def nBombsThenNumbers(n: Int): Stream[Int] = {
       if(n == 0) from(0)
       else cons({throw new Bomb; 1}, nBombsThenNumbers(n - 1))
     }
        
-    Prop.forAll (nonNegativeInts, nonNegativeInts) { (n: Int, m: Int) => nBombsThenNumbers(n).drop(n).take(m).toList; true }
+    Prop.forAll (nonNegativeInts, nonNegativeInts) { 
+      (n: Int, m: Int) => nBombsThenNumbers(n).drop(n).take(m).toList; true 
+    }
   }
 
   behavior of "map"
@@ -114,7 +130,9 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
   }
     
   it should "terminate on infinite streams (11)" in {
-    Prop.forAll (nonNegativeInts) { (n: Int) => from(0).map(_ + 1).take(n).toList == from(1).take(n).toList}
+    Prop.forAll (nonNegativeInts) { 
+      (n: Int) => from(0).map(_ + 1).take(n).toList == from(1).take(n).toList
+    }
   }
 
   behavior of "append"
@@ -128,7 +146,11 @@ class StreamSpecNroeMaumNiec extends FlatSpec with Checkers {
   }
 
   it should "result in a stream with the parts concatenated (14)" in check {
-    Prop.forAll (nonNegativeInts, nonNegativeInts) { (n: Int, m: Int) => (from(0).take(n) append from(n).take(m)).toList == from(0).take(n + m).toList }
+    Prop.forAll (nonNegativeInts, nonNegativeInts) { 
+      (n: Int, m: Int) => 
+      (from(0).take(n) append from(n).take(m)).toList == 
+      from(0).take(n + m).toList 
+    }
   }
 
 }
