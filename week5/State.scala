@@ -129,7 +129,7 @@ object RNG {
     }
 
   def nonNegativeLessThan(n: Int): Rand[Int] = 
-    flatMap (double) (d => rng => ((d * n).toInt ,rng))
+    flatMap (double) (d => rng => ((d * n).toInt, rng))
 
 }
 
@@ -201,7 +201,9 @@ object State {
 
   // Exercise 11
 
-  val random_integers = state2stream(random_int)(RNG.Simple(42)).take(10).toList
+  val random_integer_stream = state2stream(random_int)(RNG.Simple(42))
+  
+  val random_integers = random_integer_stream.take(10).toList
   
 }
 
