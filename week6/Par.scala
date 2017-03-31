@@ -64,12 +64,20 @@ object Par {
   //we use sequence to make it to a Par[List[List[A]]], and finally we use
   //flatten to get a Par[List[A]].
   //It doesn't feel very elegant.
+  //I like that the name of your variable is pls.
   def parFilter[A](as: List[A])(f: A => Boolean): Par[List[A]] = fork {
     val pls = as.map(asyncF(a => if(f(a)) List(a) else List()))
     map (sequence(pls)) (_.flatten)
   }
 
-  //Fom lecture 16/03/2017
+  // oohhhh bros i just got it ! !!! ! !! magic flatten is magic
+  // oh. I had to rewrite it a bunch now it is not as cool...
+  // hmm now i got it slightly shorter again
+  def parFilterMaybe[A](as: List[A])(f: A => Boolean): Par[List[A]] = fork {
+    map (parMap (as) (a => Some(a).filter(f))) (_.flatten)
+  }
+
+  //From lecture 16/03/2017
   def parForall[A] (as: List[A]) (p: A => Boolean): Par[Boolean] = fork {
     var bools = as.map(asyncF(p))
     map (sequence(bools)) ( _.foldLeft (true) (_ && _))
@@ -91,7 +99,6 @@ object Par {
   def choiceN[A] (n: Par[Int]) (choices: List[Par[A]]) :Par[A] = 
     es => choices (run(es)(n).get) (es)
 
-
   def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] = {
     choiceN ( map(cond)(if(_) 0 else 1) ) ( List(t,f) )
   }
@@ -101,7 +108,7 @@ object Par {
   def chooser[A,B] (pa: Par[A]) (choices: A => Par[B]): Par[B] = 
     es => choices (run(es)(pa).get) (es)
 
-  def choiceNviaChooser[A] (n: Par[Int]) (choices: List[Par[A]]): Par[A] =
+  def choiceNViaChooser[A] (n: Par[Int]) (choices: List[Par[A]]): Par[A] =
     chooser (n) (choices(_))
 
   def choiceViaChooser[A] (cond: Par[Boolean]) (t: Par[A], f: Par[A]): Par[A] =
@@ -110,12 +117,23 @@ object Par {
   // Exercise 7 (CB7.14)
 
   //For good orders sake
-  def flatmap[A,B] (pa: Par[A]) (f: A => Par[B]): Par[B] = 
+  def flatMap[A,B] (pa: Par[A]) (f: A => Par[B]): Par[B] = 
     es => f (run(es)(pa).get) (es)
 
   //Does this work? How do i test it?
+  // Yeah this one confuses me a bit too...
   def join[A] (a : Par[Par[A]]) :Par[A] = 
     es => run (es) ( run(es)(a).get() )
+
+  // flatMap via join
+  def flatMapViaJoin[A,B] (pa: Par[A]) (f: A => Par[B]): Par[B] = fork {
+    join(map(pa)(a => f(a)))
+  }
+
+  // join via flatMap
+  def joinViaFlatMap[A] (ppa: Par[Par[A]]): Par[A] = fork {
+    flatMap(ppa)(pa => pa)
+  }
 
   class ParOps[A](p: Par[A]) {
 
