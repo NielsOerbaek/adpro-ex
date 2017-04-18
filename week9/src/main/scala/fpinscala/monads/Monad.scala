@@ -53,8 +53,12 @@ trait Monad[F[_]] {
 
   // Exercise 14 (CB11.4)
 
-  // We need to answer the question as well. 
   // It makes a something of something into a something of a list of somethings.
+  // In normal parlance, it turns each element in the monad into a list of that element,
+  // replicated n times. For example, replicating three times Some(3) would result in
+  // Some(List(3, 3, 3)); and replicating three times a list List(1,2,3) would result in
+  // List(List(1,1,1),List(2,2,2),List(3,3,3)). A similar result would be achieved when
+  // replicating a stream.
   def replicateM[A] (n: Int, ma: F[A]): F[List[A]] = 
     map(ma)(a => List.fill(n)(a))
 
@@ -64,7 +68,7 @@ trait Monad[F[_]] {
 
   // Exercise 16 (CB11.7)
   def compose[A,B,C] (f: A => F[B], g: B => F[C]): A => F[C] =
-  a => flatMap (f(a)) (g)
+    a => flatMap (f(a)) (g)
 
   // Just for fun: Implementing flatMap using compose.
   def flatMap1[A,B] (ma: F[A]) (f: A => F[B]) :F[B] =   
