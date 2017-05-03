@@ -6,6 +6,7 @@ import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.Row
 
 
 object Main {
@@ -57,20 +58,22 @@ object Main {
 
   def main(args: Array[String]) = {
 
-    val glove  = loadGlove ("C:\\adpro-bigthings\\glove.6B.50d.txt") // FIXME
-    val reviews = loadReviews ("C:\\adpro-bigthings\\Pet_Supplies_5.json") // FIXME
+    val glove  = loadGlove ("C:\\adpro-bigthings\\glove.6B.50d.txt") 
+    val reviews = loadReviews ("C:\\adpro-bigthings\\Pet_Supplies_5.json") 
 
     // replace the following with the project code
 
     glove.show
     reviews.show
 
-
+    // initialise the tokenizer and convert the text in "text" into an array in 
+    // words. 
     val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-	val tokenized = tokenizer.transform(reviews)
-	tokenized.select("words").take(3).foreach(println)
+	val tokenized = tokenizer.transform(reviews).drop("text").flatMap( row => row.getAs[Seq[String]]("words").map(word => (row.getAs[Int]("id"), row.getAs[Double]("overall"), word))).toDF("id", "overall", "word")
 
 	tokenized.show
+
+
 
 		spark.stop
   }
