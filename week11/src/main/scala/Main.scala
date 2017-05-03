@@ -7,6 +7,10 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.Row
+import org.apache.spark.ml.linalg.Vector
+import org.apache.spark.ml.linalg.Vectors
+import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 
 
 object Main {
@@ -56,23 +60,91 @@ object Main {
 			.withColumnRenamed ("_2", "vec")
 			.as[Embedding]
 
+	def transformRating(outOf5: Double): Double = {
+		if(outOf5 > 3.0) 2
+		else if (outOf5 < 3.0) 0
+		else 1
+	}
+
   def main(args: Array[String]) = {
 
-    val glove  = loadGlove ("C:\\adpro-bigthings\\glove.6B.50d.txt") 
-    val reviews = loadReviews ("C:\\adpro-bigthings\\Pet_Supplies_5.json") 
+    val glove  = loadGlove ("C:\\adpro-bigthings\\glove.6B.300d.txt") 
+    val reviews = loadReviews ("C:\\adpro-bigthings\\Amazon_Instant_Video_5.json") 
 
     // replace the following with the project code
 
-    glove.show
-    reviews.show
+    // glove.show
+    // reviews.show
 
     // initialise the tokenizer and convert the text in "text" into an array in 
-    // words. 
+    // word tokes. 
     val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-	val tokenized = tokenizer.transform(reviews).drop("text").flatMap( row => row.getAs[Seq[String]]("words").map(word => (row.getAs[Int]("id"), row.getAs[Double]("overall"), word))).toDF("id", "overall", "word")
+	val tokenized = tokenizer
+		.transform(reviews)
+		//.drop("text")
+		.flatMap( row => row.getAs[Seq[String]]("words")
+			.map( word => {
+				val overall = transformRating(row.getAs[Double]("overall"))
+				(row.getAs[Int]("id"), overall, word)
+			}))
+		.toDF("id", "overall", "token")
 
-	tokenized.show
+	// tokenized.show
 
+	val joined = tokenized.join(glove, tokenized.col("token") === glove.col("word")).drop("token")
+
+	joined.show
+
+	val grouped = joined.groupByKey( row => row.getAs[Int]("id") )
+			.mapGroups( (key, valueIterator) => {
+				val values = valueIterator.toList
+				val sumVector = values.map( row => row.getAs[Seq[Double]]("vec"))
+					.reduce( (_, _).zipped.map(_ + _) )
+				val avgVector = Vectors.dense(sumVector.map(_/values.length).toArray)
+				val dat = values.head
+				(dat.getAs[Int]("id"), dat.getAs[Double]("overall"), avgVector)
+				})
+			.toDF("id", "label", "features")
+			.orderBy("id")
+
+	grouped.show
+
+	val splits = grouped.randomSplit(Array(0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1), seed = 1234L)
+
+	def getSets(n: Int): (Dataset[Row], Dataset[Row]) = {
+		val index = n % 10
+		val test = splits(index)
+		val train = (splits.take(index-1) ++ splits.drop(index)).reduce(_.union(_))
+		(train, test)
+	}
+
+	val layers = Array[Int](300, 5, 4, 3)
+
+	val trainer = new MultilayerPerceptronClassifier()
+	  .setLayers(layers)
+	  .setBlockSize(128)
+	  .setSeed(1234L)
+	  .setMaxIter(100)
+
+	def go(n: Int): Unit = {
+		if(n<0) return
+		else {
+			val (train, test) = getSets(n)
+			// train the model
+			val model = trainer.fit(train)
+			// compute accuracy on the test set
+			val result = model.transform(test)
+			val predictionAndLabels = result.select("prediction", "label")
+			val evaluator = new MulticlassClassificationEvaluator()
+			  .setMetricName("accuracy")
+
+			result.show
+			println("Accuracy: " + evaluator.evaluate(predictionAndLabels))
+			go(n-1)
+		}
+	}
+
+	go(9)
 
 
 		spark.stop
