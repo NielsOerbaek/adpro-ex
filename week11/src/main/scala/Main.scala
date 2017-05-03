@@ -25,7 +25,7 @@ object Main {
 		.master  ("local[9]")
 		.getOrCreate
 
-  import spark.implicits._
+  	import spark.implicits._
 
 	val reviewSchema = StructType(Array(
 			StructField ("reviewText", StringType, nullable=false),
@@ -48,14 +48,13 @@ object Main {
 			.withColumnRenamed ("_3", "overall")
 			.as[ParsedReview]
 
-  // Load the GLoVe embeddings file
-
-  def loadGlove (path: String): Dataset[Embedding] =
+  	// Load the GLoVe embeddings file
+	def loadGlove (path: String): Dataset[Embedding] =
 		spark
 			.read
 			.text (path)
-      .map  { _ getString 0 split " " }
-      .map  (r => (r.head, r.tail.toList.map (_.toDouble))) // yuck!
+			.map  { _ getString 0 split " " }
+			.map  (r => (r.head, r.tail.toList.map (_.toDouble))) // yuck!
 			.withColumnRenamed ("_1", "word" )
 			.withColumnRenamed ("_2", "vec")
 			.as[Embedding]
@@ -66,88 +65,80 @@ object Main {
 		else 1
 	}
 
-  def main(args: Array[String]) = {
-
-    val glove  = loadGlove ("C:\\adpro-bigthings\\glove.6B.300d.txt") 
-    val reviews = loadReviews ("C:\\adpro-bigthings\\Amazon_Instant_Video_5.json") 
-
-    // replace the following with the project code
-
-    // glove.show
-    // reviews.show
-
-    // initialise the tokenizer and convert the text in "text" into an array in 
-    // word tokes. 
-    val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-	val tokenized = tokenizer
-		.transform(reviews)
-		//.drop("text")
-		.flatMap( row => row.getAs[Seq[String]]("words")
-			.map( word => {
-				val overall = transformRating(row.getAs[Double]("overall"))
-				(row.getAs[Int]("id"), overall, word)
-			}))
-		.toDF("id", "overall", "token")
-
-	// tokenized.show
-
-	val joined = tokenized.join(glove, tokenized.col("token") === glove.col("word")).drop("token")
-
-	joined.show
-
-	val grouped = joined.groupByKey( row => row.getAs[Int]("id") )
-			.mapGroups( (key, valueIterator) => {
-				val values = valueIterator.toList
-				val sumVector = values.map( row => row.getAs[Seq[Double]]("vec"))
-					.reduce( (_, _).zipped.map(_ + _) )
-				val avgVector = Vectors.dense(sumVector.map(_/values.length).toArray)
-				val dat = values.head
-				(dat.getAs[Int]("id"), dat.getAs[Double]("overall"), avgVector)
-				})
-			.toDF("id", "label", "features")
-			.orderBy("id")
-
-	grouped.show
-
-	val splits = grouped.randomSplit(Array(0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1), seed = 1234L)
-
-	def getSets(n: Int): (Dataset[Row], Dataset[Row]) = {
+	def getTestDatasets(n: Int, splits: Array[Dataset[Row]]): (Dataset[Row], Dataset[Row]) = {
 		val index = n % 10
 		val test = splits(index)
 		val train = (splits.take(index-1) ++ splits.drop(index)).reduce(_.union(_))
 		(train, test)
 	}
 
-	val layers = Array[Int](300, 5, 4, 3)
+	def getTokens(reviews: Dataset[Row]) = {
+		val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
+		val tokenized = tokenizer.transform(reviews)
 
-	val trainer = new MultilayerPerceptronClassifier()
-	  .setLayers(layers)
-	  .setBlockSize(128)
-	  .setSeed(1234L)
-	  .setMaxIter(100)
-
-	def go(n: Int): Unit = {
-		if(n<0) return
-		else {
-			val (train, test) = getSets(n)
-			// train the model
-			val model = trainer.fit(train)
-			// compute accuracy on the test set
-			val result = model.transform(test)
-			val predictionAndLabels = result.select("prediction", "label")
-			val evaluator = new MulticlassClassificationEvaluator()
-			  .setMetricName("accuracy")
-
-			result.show
-			println("Accuracy: " + evaluator.evaluate(predictionAndLabels))
-			go(n-1)
-		}
+		tokenized
+			.flatMap( row =>
+				row
+					.getAs[Seq[String]]("words")
+					.map( word => (row.getAs[Int]("id"), row.getAs[Double]("overall"), word))
+			)
+			.toDF("id", "overall", "token")
 	}
 
-	go(9)
+	def getAverageVectorsForReviews(tokens: Dataset[Row], glove: Dataset[Row]) = {
+		tokens
+			.join(glove, tokens.col("token") === glove.col("word"))
+			.drop("token")
+			.groupByKey( row => row.getAs[Int]("id") )
+			.mapGroups( (key, valueIterator) => {
+				val values = valueIterator.toList
+				val sumVector = values
+									.map( row => row.getAs[Seq[Double]]("vec") )
+									.reduce( (_, _).zipped.map(_ + _) )				// #functionalprogramming #blackmagic
+				val avgVector = sumVector
+									.map(_/values.length)
+									.toArray
+				val transformedRating = transformRating(values.head.getAs[Double]("overall"))
+				(key, transformedRating, Vector.dense(avgVector))
+			})
+			.toDF("id", "label", "features")
+	}
 
+	def nFoldCrossValidation(numSplits: Int, layers: Array[Int], iterations: Int, averageVectors: Dataset[Row]) = {
+		val splits = averageVectors.randomSplit(Array.fill(numSplits)(1.0 / numSplits), seed = 1234L)
+
+		val trainer = new MultilayerPerceptronClassifier()
+			.setLayers(layers)
+			.setBlockSize(128)
+			.setSeed(1234L)
+			.setMaxIter(iterations)
+
+		def go(n: Int): Unit = {
+			if(n<0) return
+			else {
+				val (train, test) = getTestDatasets(n, splits)
+				val result = trainer.fit(train).transform(test)
+				val predictionAndLabels = result.select("prediction", "label")
+				val evaluator = new MulticlassClassificationEvaluator()
+					.setMetricName("accuracy")
+
+				result.show
+				println("Accuracy: " + evaluator.evaluate(predictionAndLabels))
+				go(n-1)
+			}
+		}
+
+		go(numSplits - 1);
+	}
+
+  	def main(args: Array[String]) = {
+		val glove = loadGlove ("C:\\adpro-bigthings\\glove.6B.300d.txt")
+
+		val reviews = loadReviews ("C:\\adpro-bigthings\\Amazon_Instant_Video_5.json")
+		val tokens = getTokens(reviews)
+		val averageVectors = getAverageVectorsForReviews(tokens, glove)
+		nFoldCrossValidation(10, Array[Int](300, 5, 4, 3), 100, averageVectors)
 
 		spark.stop
-  }
-
+  	}
 }
