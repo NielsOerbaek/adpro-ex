@@ -72,7 +72,7 @@ object Main {
 		(train, test)
 	}
 
-	def getTokens(reviews: Dataset[Row]) = {
+	def getTokens(reviews: Dataset[(Integer, String, Double)]) = {
 		val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
 		val tokenized = tokenizer.transform(reviews)
 
@@ -85,7 +85,7 @@ object Main {
 			.toDF("id", "overall", "token")
 	}
 
-	def getAverageVectorsForReviews(tokens: Dataset[Row], glove: Dataset[Row]) = {
+	def getAverageVectorsForReviews(tokens: Dataset[Row], glove: Dataset[(String, List[Double])]) = {
 		tokens
 			.join(glove, tokens.col("token") === glove.col("word"))
 			.drop("token")
@@ -99,7 +99,7 @@ object Main {
 									.map(_/values.length)
 									.toArray
 				val transformedRating = transformRating(values.head.getAs[Double]("overall"))
-				(key, transformedRating, Vector.dense(avgVector))
+				(key, transformedRating, Vectors.dense(avgVector))
 			})
 			.toDF("id", "label", "features")
 	}
@@ -113,9 +113,10 @@ object Main {
 			.setSeed(1234L)
 			.setMaxIter(iterations)
 
+
+
 		def go(n: Int): Unit = {
-			if(n<0) return
-			else {
+			if(n>=0) {
 				val (train, test) = getTestDatasets(n, splits)
 				val result = trainer.fit(train).transform(test)
 				val predictionAndLabels = result.select("prediction", "label")
@@ -134,10 +135,10 @@ object Main {
   	def main(args: Array[String]) = {
 		val glove = loadGlove ("C:\\adpro-bigthings\\glove.6B.300d.txt")
 
-		val reviews = loadReviews ("C:\\adpro-bigthings\\Amazon_Instant_Video_5.json")
+		val reviews = loadReviews ("C:\\adpro-bigthings\\Pet_Supplies_5.json")
 		val tokens = getTokens(reviews)
 		val averageVectors = getAverageVectorsForReviews(tokens, glove)
-		nFoldCrossValidation(10, Array[Int](300, 5, 4, 3), 100, averageVectors)
+		nFoldCrossValidation(10, Array[Int](300, 50, 5, 3), 100, averageVectors)
 
 		spark.stop
   	}
