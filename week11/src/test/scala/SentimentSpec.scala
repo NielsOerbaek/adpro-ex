@@ -16,8 +16,9 @@ class SentimentSpec extends FreeSpec with Matchers with BeforeAndAfterAll {
 
   import spark.implicits._
 
-  val glove = Main.loadGlove("path/to/glove/file/in/your/filesystem")
-  val reviews = Main.loadReviews("path/to/reviews/file/in/your/filesystem")
+  //disabled for now -- we didn't get to write tests for these :-(
+  //val glove = Main.loadGlove("path/to/glove/file/in/your/filesystem")
+  //val reviews = Main.loadReviews("path/to/reviews/file/in/your/filesystem")
 
   "something to do with sentiments in texts or some such" - {
     "tokenization" - {
@@ -28,22 +29,29 @@ class SentimentSpec extends FreeSpec with Matchers with BeforeAndAfterAll {
 
     "transformRating" - {
       "transforms a low rating to 0" in {
-        Main.transformRating(1.2).should.equal(0)
+        assert(Main.transformRating(1.4) == 0)
       }
 
       "transforms a mediocre rating to 1" in {
-        Main.transformRating(3.0).should.equal(1)
+        assert(Main.transformRating(3.0) == 1)
       }
 
       "transforms a good rating to 2" in {
-        Main.transformRating(3.1).should.equal(2)
-        Main.transformRating(4.0).should.equal(2)
+        assert(Main.transformRating(3.1) == 2)
+        assert(Main.transformRating(4.0) == 2)
       }
     }
     
     "splitting data sets" - {
-      "pick the nth set and concat the others" in {
-        ???
+      "pick the nth set and concat the others" in { //this would be good to make a property test
+        val ds1 = spark.createDataset(Seq((1,2),(1,2))).toDF("i1","i2")
+        val ds2 = spark.createDataset(Seq((2,3),(2,3))).toDF("i1","i2")
+        val ds3 = spark.createDataset(Seq((3,4),(3,4))).toDF("i1","i2")
+        val (train,test) = Main.getTestDatasets(1, Array(ds1,ds2,ds3))
+        val expectedTrain = ds1.union(ds3).collect
+        assert(train.collect.map(row => expectedTrain.map(row2 => row2 == row).reduce((x,y) => x || y)).reduce((x,y) => x && y))
+        val expectedTest = ds2.collect
+        assert(test.collect.map(row => expectedTest.map(row2 => row2 == row).reduce((x,y) => x || y)).reduce((x,y) => x && y))
       }
     }
 
@@ -54,7 +62,7 @@ class SentimentSpec extends FreeSpec with Matchers with BeforeAndAfterAll {
     }
 
     "n-fold cross-validation" - {
-      "probably runs a perceptron..." taggedAs Ignore in {
+      "probably runs a perceptron..." ignore {
         // this is quite hard to test :-( we have done manual tests of the output
       }
     }
