@@ -1,4 +1,4 @@
-import org.scalatest.{FreeSpec, Matchers, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfterAll, FreeSpec, Matchers}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.Dataset
 
@@ -16,14 +16,27 @@ class SentimentSpec extends FreeSpec with Matchers with BeforeAndAfterAll {
 
   import spark.implicits._
 
-  //disabled for now -- we didn't get to write tests for these :-(
-  //val glove = Main.loadGlove("path/to/glove/file/in/your/filesystem")
-  //val reviews = Main.loadReviews("path/to/reviews/file/in/your/filesystem")
+  val glove = Main.loadGlove("C:\\adpro-bigthings\\glove.6B.300d.txt")
+  val reviews = Main.loadReviews("C:\\adpro-bigthings\\Amazon_Instant_Video_5.json")
 
   "something to do with sentiments in texts or some such" - {
     "tokenization" - {
       "correctly splits a short sentence into meaningful tokens" in {
-        ??? // Main.getTokens()
+        val ds = Seq((1,"This Sentence Has Five Words", 0.0))
+          .toDS
+          .withColumnRenamed ("_1", "id" )
+          .withColumnRenamed ("_2", "text")
+          .withColumnRenamed ("_3", "overall")
+          .as[Main.ParsedReview]
+
+        val tokens = Main.getTokens(ds)
+          .select("token")
+          .rdd
+          .map(r => r(0))
+          .collect()
+          .toList
+
+        assert(tokens == List("this", "sentence", "has", "five", "words"))
       }
     }
 

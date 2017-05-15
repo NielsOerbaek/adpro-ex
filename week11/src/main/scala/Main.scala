@@ -133,12 +133,12 @@ object Main {
 	}
 
   	def main(args: Array[String]) = {
-		val glove = loadGlove ("C:\\adpro-bigthings\\glove.6B.300d.txt")
+		val glove = loadGlove ("C:\\adpro-bigthings\\glove.6B.50d.txt")
 
-		val reviews = loadReviews ("C:\\adpro-bigthings\\Pet_Supplies_5.json")
+		val reviews = loadReviews ("C:\\adpro-bigthings\\Amazon_Instant_Video_5.json")
 		val tokens = getTokens(reviews)
 		val averageVectors = getAverageVectorsForReviews(tokens, glove)
-		nFoldCrossValidation(10, Array[Int](300, 50, 5, 3), 100, averageVectors)
+		nFoldCrossValidation(10, Array[Int](50, 25, 5, 3), 100, averageVectors)
 
 		spark.stop
   	}
