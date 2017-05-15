@@ -101,17 +101,17 @@ class FingerTreeSpecWasowski extends FlatSpec with Checkers {
   // the tests can be easily rewritten to paper-style views
 
   it should "be NilTree on Empty" in {
-    // Empty() match {
-    //   case NilTree () => assert(Empty().empty)
-    //   case _ => fail()
-    // }
+     Empty() match {
+       case NilTree () => assert(Empty().empty)
+       case _ => fail()
+     }
   }
 
   it should "be ConsL(_,Nil) on Single" in {
-    // Single(42) match {
-    //   case ConsL(_,NilTree()) => assert(Single(42).nonEmpty)
-    //   case _ => fail()
-    // }
+     Single(42) match {
+       case ConsL(_,NilTree()) => assert(Single(42).nonEmpty)
+       case _ => fail()
+     }
   }
 
   // it should "be ConsL(_,Consl(_,_)) on any tree larger than 3" in check {
