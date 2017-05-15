@@ -99,9 +99,9 @@ object data {
   // In the paper views are generic in the type of tree used. Here I make them
   // fixed for FingerTrees.
 
-//    sealed trait ViewL[+A]
-//    case class NilTree () extends ViewL[Nothing]
-//    case class ConsL[A] (hd: A, tl: FingerTree[A]) extends ViewL[A]
+  // sealed trait ViewL[+A]
+  // case class NilTree () extends ViewL[Nothing]
+  // case class ConsL[A] (hd: A, tl: FingerTree[A]) extends ViewL[A]
 
   // Left extractors for Finger Trees (we use the same algorithm as viewL in the
   // paper). You can do this, once you implemented the views the book way.
