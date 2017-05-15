@@ -68,7 +68,7 @@ object Main {
 	def getTestDatasets(n: Int, splits: Array[Dataset[Row]]): (Dataset[Row], Dataset[Row]) = {
 		val index = n % 10
 		val test = splits(index)
-		val train = (splits.take(index-1) ++ splits.drop(index)).reduce(_.union(_))
+		val train = (splits.take(index) ++ splits.drop(index + 1)).reduce(_.union(_))
 		(train, test)
 	}
 

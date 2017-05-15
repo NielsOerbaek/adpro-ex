@@ -42,7 +42,7 @@ class SentimentSpec extends FreeSpec with Matchers with BeforeAndAfterAll {
 
     "transformRating" - {
       "transforms a low rating to 0" in {
-        assert(Main.transformRating(1.2) == 0)
+        assert(Main.transformRating(1.4) == 0)
       }
 
       "transforms a mediocre rating to 1" in {
@@ -56,8 +56,15 @@ class SentimentSpec extends FreeSpec with Matchers with BeforeAndAfterAll {
     }
     
     "splitting data sets" - {
-      "pick the nth set and concat the others" in {
-        ???
+      "pick the nth set and concat the others" in { //this would be good to make a property test
+        val ds1 = spark.createDataset(Seq((1,2),(1,2))).toDF("i1","i2")
+        val ds2 = spark.createDataset(Seq((2,3),(2,3))).toDF("i1","i2")
+        val ds3 = spark.createDataset(Seq((3,4),(3,4))).toDF("i1","i2")
+        val (train,test) = Main.getTestDatasets(1, Array(ds1,ds2,ds3))
+        val expectedTrain = ds1.union(ds3).collect
+        assert(train.collect.map(row => expectedTrain.map(row2 => row2 == row).reduce((x,y) => x || y)).reduce((x,y) => x && y))
+        val expectedTest = ds2.collect
+        assert(test.collect.map(row => expectedTest.map(row2 => row2 == row).reduce((x,y) => x || y)).reduce((x,y) => x && y))
       }
     }
 
