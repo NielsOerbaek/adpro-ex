@@ -246,9 +246,18 @@ object data {
       case ConsL(a, fa) => a
       case _ => throw new IllegalArgumentException("Cannot do that to an empty tree")
     }
-    // def tailL[A] ... = ...
-    // def headR[A] ... = ...
-    // def tailR[A] ... = ...
+    def tailL[A] (ft: FingerTree[A]) : FingerTree[A] = ft match {
+      case ConsL(a, fa) => fa
+      case _ => Empty()
+    }
+    def headR[A] (ft: FingerTree[A]) : A  = ft match {
+      case ConsR(fa,a) => a
+      case _ => throw new IllegalArgumentException("Cannot do that to an empty tree")
+    }
+    def tailR[A] (ft: FingerTree[A]) : FingerTree[A] = ft match {
+      case ConsR(fa, a) => fa
+      case _ => Empty()
+    }
   }
 
 }
