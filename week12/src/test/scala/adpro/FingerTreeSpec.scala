@@ -25,22 +25,25 @@ class FingerTreeSpecWasowski extends FlatSpec with Checkers {
   // Generator of arbitrary trees of given size for scala check (you can use it
   // in your properties)
 
-  // def fingerTreeOfN[A] (n: Int, gen: Gen[A]) :Gen[FingerTree[A]] = ...
-  // generate it using Gen.listOfN of Integers between 0 and 1000, and then map
-  // it to finger trees using toTree.
+  def fingerTreeOfN[A] (n: Int, gen: Gen[A]) :Gen[FingerTree[A]] =
+    Gen.listOfN(n,gen).map(Digit.toTree(_))
 
   // Arbitrary trees of size between zero and 100
   //
   // Pick up a generated integer n btw 0 and 100 and then use it to generate a
   // tree of this size using fingerTreeOfN (can be done using flatMap or for
   // comprehensions).
-  // def fingerTree[A] (gen: Gen[A]) :Gen[FingerTree[A]] = ...
+  def fingerTree[A] (gen: Gen[A]) :Gen[FingerTree[A]] =
+    for {
+      n <- Gen.choose(0,100)
+      tree <- fingerTreeOfN(n,gen)
+    } yield tree
 
   // The same as above but as an instance of Arbitrary
   // Uncomment to make available once you have the fingerTree function
-  //
-  // implicit def arbFingerTree[A] (implicit arb: Arbitrary[A]) =
-  //   Arbitrary[FingerTree[A]](fingerTree[A] (arbitrary[A]))
+
+  implicit def arbFingerTree[A] (implicit arb: Arbitrary[A]) =
+    Arbitrary[FingerTree[A]](fingerTree[A] (arbitrary[A]))
 
 
 
@@ -86,15 +89,26 @@ class FingerTreeSpecWasowski extends FlatSpec with Checkers {
 
   behavior of "addR"
 
-  // ...
+  it should "produce a queue containing the inserted element" in {
+    assert(Empty().addR(42).toList == List(42))
+  }
+
+  it should "produce a queue containing the inserted elements" in check {
+    forAll (Gen.listOfN(100, Gen.choose[Int](0,1000))) {
+      (l :List[Int]) =>
+        l.foldLeft[FingerTree[Int]] (Empty()) (FingerTree.addR).toList == l
+    }
+  }
 
   behavior of "toTree"
 
-//   it should "be an identitity on trees" in check {
-//     forAll (fingerTreeOfN(100, Gen.choose[Int](0,1000))) {
-//       (t :FingerTree[Int]) => toTree (t) == t
-//     }
-//   }
+   it should "be an identitity on trees" in check {
+     forAll (fingerTreeOfN(100, Gen.choose[Int](0,1000))) {
+       (t :FingerTree[Int]) => {
+         toTree (t) == t
+       }
+     }
+   }
 
   behavior of "left views (extractors)"
 

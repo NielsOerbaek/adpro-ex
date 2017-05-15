@@ -35,7 +35,7 @@ object data {
 
     // page 6
     
-    def toTree[A] (fa :F[A]) :FingerTree[A] = reduceR[A, FingerTree[A]]((ra, raf) => FingerTree.addR(raf,ra)) (fa, Empty())
+    def toTree[A] (fa :F[A]) :FingerTree[A] = reduceR[A, FingerTree[A]]((ra, raf) => raf.addL(ra)) (fa, Empty())
   }
 
   // Types for Finger trees after Hinze and Pattersoni (page 4)
@@ -59,10 +59,10 @@ object data {
     def addR[B >:A] (b: B) :FingerTree[B] = FingerTree.addR (this,b)
     def toList :List[A] = FingerTree.toList (this)
 
-    // def headL :A = FingerTree.headL (this)
-    // def tailL :FingerTree[A] = FingerTree.tailL (this)
-    // def headR :A = FingerTree.headR (this)
-    // def tailR :FingerTree[A] = FingerTree.tailR (this)
+    def headL :A = FingerTree.headL (this)
+    def tailL :FingerTree[A] = FingerTree.tailL (this)
+    def headR :A = FingerTree.headR (this)
+    def tailR :FingerTree[A] = FingerTree.tailR (this)
 
     // page 7 (but this version uses polymorphis for efficiency, so we can
     // implement it differently; If you want to follow the paper closely move them to
@@ -203,11 +203,11 @@ object data {
     def addR[A] (fa: FingerTree[A], a: A): FingerTree[A] = fa match {
       case Empty() => Single(a)
       case Single(b) => Deep(Digit(b), Empty(), Digit(a))
-      case Deep(pr, m, Digit(b,c,d,e)) => {
+      case Deep(pr, m, Digit(e,d,c,b)) => {
         val newM = addR[Node[A]] (m, Node3(e,d,c))
-        Deep(pr, newM, Digit(a, b))
+        Deep(pr, newM, Digit(b, a))
       }
-      case Deep(pr, m, sf) => Deep(pr, m, a::sf)
+      case Deep(pr, m, sf) => Deep(pr, m, sf:::List(a))
     }
 
     // page 6
