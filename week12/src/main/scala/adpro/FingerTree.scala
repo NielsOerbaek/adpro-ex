@@ -68,8 +68,14 @@ object data {
     // implement it differently; If you want to follow the paper closely move them to
     // FingerTree object and delegate the methods, so my tests still work.
     //
-    // def empty :Boolean = ...
-    // def nonEmpty :Boolean = ...
+    def empty :Boolean = this match {
+      case NilTree() => true
+      case _ => false
+    }
+    def nonEmpty :Boolean = this match {
+      case NilTree() => false
+      case _ => true
+    }
   }
   case class Empty () extends FingerTree[Nothing] {
 
@@ -220,17 +226,26 @@ object data {
     // A smart constructor that allows pr to be empty
     def deepL[A] (pr: Digit[A], m: FingerTree[Node[A]], sf: Digit[A]) :FingerTree[A] = pr match {
       case Nil => m match {
-        case None => sf.toTree
-        case Some(a, ft) => Deep(a.toList, ft, sf)
+        case NilTree() => Digit.toTree(sf)
+        case ConsL(a, ft) => Deep(a.toList, ft, sf)
       }
       case _ => Deep(pr,m,sf)
     }
 
-    // def deepR[A] ... = ...
+    def deepR[A] (pr: Digit[A], m: FingerTree[Node[A]], sf: Digit[A]) :FingerTree[A] = sf match {
+      case Nil => m match {
+        case NilTree() => Digit.toTree(pr)
+        case ConsR(ft,a) => Deep(pr, ft, a.toList)
+      }
+      case _ => Deep(pr,m,sf)
+    }
 
     // page 7
 
-    // def headL[A] ... = ...
+    def headL[A] (ft: FingerTree[A]) : A = ft match {
+      case ConsL(a, fa) => a
+      case _ => throw new IllegalArgumentException("Cannot do that to an empty tree")
+    }
     // def tailL[A] ... = ...
     // def headR[A] ... = ...
     // def tailR[A] ... = ...
