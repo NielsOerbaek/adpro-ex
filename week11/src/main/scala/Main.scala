@@ -107,29 +107,29 @@ object Main {
 	def nFoldCrossValidation(numSplits: Int, layers: Array[Int], iterations: Int, averageVectors: Dataset[Row]) = {
 		val splits = averageVectors.randomSplit(Array.fill(numSplits)(1.0 / numSplits), seed = 1234L)
 
-		val trainer = new MultilayerPerceptronClassifier()
-			.setLayers(layers)
-			.setBlockSize(128)
-			.setSeed(1234L)
-			.setMaxIter(iterations)
-
-
-
-		def go(n: Int): Unit = {
-			if(n>=0) {
-				val (train, test) = getTestDatasets(n, splits)
+		(0 until 10)
+			.par
+			.map(n => getTestDatasets(n, splits))
+			.map { case (train, test) => {
+				val trainer = new MultilayerPerceptronClassifier()
+					.setLayers(layers)
+					.setBlockSize(128)
+					.setSeed(1234L)
+					.setMaxIter(iterations)
+				
 				val result = trainer.fit(train).transform(test)
 				val predictionAndLabels = result.select("prediction", "label")
-				val evaluator = new MulticlassClassificationEvaluator()
-					.setMetricName("accuracy")
+				val evaluator = new MulticlassClassificationEvaluator().setMetricName("accuracy")
+				val accuracy = evaluator.evaluate(predictionAndLabels)
 
+				(result, accuracy)
+			} }
+			.foldLeft (List[(Dataset[Row], Double)]()) { (acc, resultSet) => resultSet :: acc } //gather into list
+			.foreach { case (result, accuracy) => {
+				println("Accuracy: " + accuracy)
 				result.show
-				println("Accuracy: " + evaluator.evaluate(predictionAndLabels))
-				go(n-1)
-			}
-		}
-
-		go(numSplits - 1);
+				println("-----")
+			} }
 	}
 
   	def main(args: Array[String]) = {
