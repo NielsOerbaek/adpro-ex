@@ -77,13 +77,8 @@ object data {
       case _ => true
     }
   }
-  case class Empty () extends FingerTree[Nothing] {
+  case class Empty () extends FingerTree[Nothing]
 
-    // page 7
-    //
-    // override def empty =  ...
-    // override def nonEmpty = ...
-  }
   case class Single[A] (data: A) extends FingerTree[A]
   // paramter names: pr - prefix, m - middle, sf - suffix
   case class Deep[A] (pr: Digit[A], m: FingerTree[Node[A]], sf: Digit[A]) extends FingerTree[A]
@@ -128,7 +123,11 @@ object data {
   object ConsR {
     def unapply[A] (t: FingerTree[A]) :Option[(FingerTree[A],A)] = t match {
       case Single(a) => Some((Empty(),a))
-      case Deep(pr,m,sfHead::sfTail) => Some((Deep(pr,m,sfTail),sfHead))
+      case Deep(pr,m,sf) => {
+        val sfHead = sf.reverse.head
+        val sfTail = sf.reverse.tail.reverse
+        Some((FingerTree.deepR(pr,m,sfTail),sfHead))
+      }
       case _ => None
     }
   }
